@@ -1,0 +1,41 @@
+{
+  "name": "@tacticalchihuahua/rise",
+  "version": "1.0.0",
+  "description": "eclipse-resistant network identities",
+  "main": "index.js",
+  "scripts": {
+    "test": "mocha test --exit",
+    "generate-docs": "mkdir -p ./docs && rm -r ./docs && jsdoc index.js -c .jsdoc.json --verbose -d ./docs"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/161chihuahuas/rise.git"
+  },
+  "keywords": [
+    "kademlia",
+    "nodeid",
+    "eclipse",
+    "sybil",
+    "dusk",
+    "p2p",
+    "crypto"
+  ],
+  "author": "lily anne <161chihuahuas@disroot.org>",
+  "license": "LGPL-2.1",
+  "bugs": {
+    "url": "https://github.com/161chihuahuas/rise/issues"
+  },
+  "homepage": "https://github.com/161chihuahuas/rise#readme",
+  "dependencies": {
+    "@noble/curves": "^1.9.2",
+    "@tacticalchihuahua/equihash": "^1.0.0",
+    "bip39": "^3.1.0",
+    "eciesjs": "^0.4.15"
+  },
+  "devDependencies": {
+    "chai": "^5.2.0",
+    "clean-jsdoc-theme": "^4.3.0",
+    "jsdoc": "^4.0.4",
+    "mocha": "^11.5.0"
+  }
+}
