@@ -1,4 +1,4 @@
-# rise ~ *eclipse resistant network identities*
+# 🌄 rise ~ *eclipse resistant network identities*
 
 A protocol and implementation of self-issued network identities capable of:
 
@@ -82,7 +82,7 @@ const identity = await rise.Identity.unlock('password', crypted);
 console.log(identity.toJSON());
 ```
 
-Thorough JSDoc annotations are provided and rendered as [documentation](/).
+Generate the documentation with `npm run generate-docs`.
 
 ## copying
 
