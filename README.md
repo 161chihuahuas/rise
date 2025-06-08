@@ -82,7 +82,7 @@ const identity = await rise.Identity.unlock('password', crypted);
 console.log(identity.toJSON());
 ```
 
-See the [documentation](docs) for more a more detailed guide.
+See the [documentation](https://lilyanne.me/rise) for more a more detailed guide.
 
 ## copying
 
