@@ -10,7 +10,7 @@
     "template": "./node_modules/clean-jsdoc-theme",
     "theme_opts": {
       "default_theme": "dark",
-      "homepageTitle": "rise ~ eclipse resistant identities"
+      "homepageTitle": "🌄 rise ~ eclipse resistant identities"
     }
   },
   "markdown": {
