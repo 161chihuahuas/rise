@@ -1,6 +1,8 @@
 /**
- *
+ * Rise is a protocol for decentalized, eclipse-resistant identities. 
  * @module rise
+ * @author tactical chihuahua <161chihuahuas@disroot.org>
+ * @license LGPL-2.1
  */
 'use strict';
 
@@ -26,55 +28,114 @@ function rmd160(input) {
 
 class RiseIdentity {
 
+  /**
+   * Default difficuly setting. Require this many leading zeroes in solution 
+   * proofs.
+   */ 
   static get Z() {
     return 6;
   }
 
+  /**
+   * Lowered difficulty for testing.
+   */
   static get TEST_Z() {
     return 0;
   }
 
+  /**
+   * Equihash N parameter (width in bits).
+   */
   static get N() {
     return 102;
   }
 
+  /**
+   * Lowered width for testing.
+   */
   static get TEST_N() {
     return 90;
   }
 
+  /**
+   * Equihash K parameter (length).
+   */
   static get K() {
     return 5;
   }
 
+  /**
+   * Lowered length for testing.
+   */
   static get TEST_K() {
     return 5;
   }
 
+  /**
+   * Rise magic number. Used as message terminator and protocol identitifier.
+   */
   static get MAGIC() {
     return sha256(Buffer.from('¬«', 'binary'));
   }
 
+  /**
+   * Magic number to segment test network.
+   */
   static get TEST_MAGIC() {
     return sha256(Buffer.from('¡', 'binary'));
   }
 
+  /**
+   * Rise default salt for pbkdf2 operations.
+   */
   static get SALT() {
     return Buffer.from('\fæ×"\x94ì9\x82BW(i<ªþ`', 'binary');
   }
 
+  /**
+   * Rise *private* identity bundle. This is the primary interface for using 
+   * this module. Allows to generate new identities and use them as the 
+   * context for protected operations.
+   * @constructor
+   * @param {Uint8Array|buffer} [entropy] - Private key (secp256k1). If absent
+   * a new one will be created.
+   * @param {RiseSolution} [solution] - Equihash solution corresponding to the 
+   * given private key.
+   * @param {Uint8Array|buffer} [salt=RiseSolution~SALT] - Salt used for local 
+   * pbkdf2 operations locking/unlocking this identity.
+   */
   constructor(entropy, solution, salt = RiseIdentity.SALT) {
     entropy = entropy || secp.utils.randomPrivateKey();
 
+    /** @property {Uint8Array|buffer} salt - Used for local pbkdf2. */ 
     this.salt = salt; 
+    /** @property {string} mnemonic - BIP39 recovery words. */ 
     this.mnemonic = bip39.entropyToMnemonic(entropy);
+    /** @property {RiseSecret} secret - Underlying secret key. */ 
     this.secret = new RiseSecret(entropy);
-    this.solution = solution || {};
+    /** @property {RiseSolution} solution - Underlying equihash solution. */ 
+    this.solution = solution || new RiseSolution();
   }
 
+  /**
+   * @property {buffer} fingerprint - 160 bit solution hash.
+   */ 
   get fingerprint() {
     return this.solution.fingerprint;
   }
 
+  /**
+   * Creates a new {@link RiseSolution} for this identity. This method updates 
+   * the internal state and will overwrite any previous solution performed in 
+   * this context.
+   * @param {number} [n=RiseIdentity.N] - Width in bits.
+   * @param {number} [k=RiseIdentity.K] - Solution length.
+   * @param {buffer} [epoch=RiseIdentity.MAGIC] - Prepended to public key before 
+   * hashing. This can be used to segment protocol versions by changing this value
+   * which would render solutions generated with a previous or otherwise different 
+   * value invalid and require a new solution.
+   * @returns {Promise<RiseSolution>}
+   */ 
   solve(n = RiseIdentity.N, k = RiseIdentity.K, epoch = RiseIdentity.MAGIC) {
     return new Promise((resolve, reject) => {
       equihash.solve(sha256(
@@ -87,6 +148,10 @@ class RiseIdentity {
     });
   }
 
+  /**
+   * Returns a plain object representation of this identity, serializable to JSON.
+   * @returns {object}
+   */
   toJSON() {
     return {
       secret: Buffer.from(this.secret.privateKey).toString('base64'),
@@ -98,6 +163,13 @@ class RiseIdentity {
     };
   }
 
+  /**
+   * Creates an encrypted blob representation of this identity, suitable for 
+   * persistance to disk.
+   * @param {string} password - User provided passphrase used to encrypt this 
+   * identity.
+   * @returns {buffer}
+   */ 
   lock(password) {
     const key = crypto.pbkdf2Sync(password, this.salt, 100000, 32, 'sha512');
     const iv = key.subarray(0, 16);
@@ -109,12 +181,30 @@ class RiseIdentity {
     return encryptedData;
   }
 
+  /**
+   * Constructs an encrypted and signed {@link RiseMessage} for the given 
+   * public key.
+   * @param {Uint8Array|buffer} toPublicKey - Recipient identity for encryption.
+   * @param {Object.<string, string>} [body] - Key-value pairs to serialize in the 
+   * message.
+   * @param {Object.<string, string>} [head] - Custom headers to include. **Headers 
+   * are NOT ENCRYPTED**. Only information that is necessary for routing should be 
+   * included here. 
+   * @returns {SignedRiseMessage}
+   */ 
   message(toPublicKey, body = {}, head = {}) {
     const clearMsg = new RiseMessage(this.solution, body, head);
     const cryptMsg = clearMsg.encrypt(toPublicKey);
     return cryptMsg.sign(this.secret.privateKey);
   }
 
+  /**
+   * Decrypts the blob given the password and creates a new instance.
+   * @param {string} password - User supplied passphrase for decryption.
+   * @param {buffer} data - Binary blob of encrypted identity.
+   * @param {buffer} [salt=RiseIdentity.SALT] - Salt for pbkdf2.
+   * @returns {RiseIdentity}
+   */ 
   static unlock(password, data, salt = RiseIdentity.SALT) {
     const key = crypto.pbkdf2Sync(password, salt, 100000, 32, 'sha512');
     const iv = key.subarray(0, 16);
@@ -132,6 +222,17 @@ class RiseIdentity {
     );
   }
 
+  /**
+   * "Mines" a new {@link RiseIdentity} and *iteratively* generates 
+   * {@link RiseSolution}s until one is found that satisfies the stated 
+   * difficulty.
+   * @param {number} [zeroes=RiseIdentity.Z] - Difficulty level expressed in 
+   * number of leading zero bits.
+   * @param {number} [n=RiseIdentity.N] - Width in bits.
+   * @param {number} [k=RiseIdentity.K] - Solution length.
+   * @param {buffer} [epoch=RiseIdentity.MAGIC] - Network magic number.
+   * @returns {RiseIdentity}
+   */
   static async generate(zeroes = RiseIdentity.Z, n, k, epoch) {
     let id, sol;
 
