@@ -277,7 +277,10 @@ class RiseSecret {
    * @param {Uint8Array|buffer} [secret] - Private key to use.
    */
   constructor(secret) {
-    /** @member {Uint8Array} privateKey - Underlying private key. */ 
+    /** 
+     * Underlying private key.
+     * @member {Uint8Array} 
+     */ 
     this.privateKey = secret
       ? Uint8Array.from(secret)
       : secp.utils.randomPrivateKey();
