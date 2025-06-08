@@ -143,13 +143,13 @@ class RiseIdentity {
    * Creates a new {@link RiseSolution} for this identity. This method updates 
    * the internal state and will overwrite any previous solution performed in 
    * this context.
-   * @param {number} [n=RiseIdentity.N] - Width in bits.
-   * @param {number} [k=RiseIdentity.K] - Solution length.
-   * @param {buffer} [epoch=RiseIdentity.MAGIC] - Prepended to public key before 
+   * @param {number} [n=module:rise~RiseIdentity~N] - Width in bits.
+   * @param {number} [k=module:rise~RiseIdentity~K] - Solution length.
+   * @param {buffer} [epoch=module:rise~RiseIdentity~MAGIC] - Prepended to public key before 
    * hashing. This can be used to segment protocol versions by changing this value
    * which would render solutions generated with a previous or otherwise different 
    * value invalid and require a new solution.
-   * @returns {Promise&lt;RiseSolution>}
+   * @returns {Promise&lt;module:rise~RiseSolution>}
    */ 
   solve(n = RiseIdentity.N, k = RiseIdentity.K, epoch = RiseIdentity.MAGIC) {
     return new Promise((resolve, reject) => {
@@ -197,7 +197,7 @@ class RiseIdentity {
   }
 
   /**
-   * Constructs an encrypted and signed {@link RiseMessage} for the given 
+   * Constructs an encrypted and signed {@link module:rise~RiseMessage} for the given 
    * public key.
    * @param {Uint8Array|buffer} toPublicKey - Recipient identity for encryption.
    * @param {Object.&lt;string, string>} [body] - Key-value pairs to serialize in the 
@@ -205,7 +205,7 @@ class RiseIdentity {
    * @param {Object.&lt;string, string>} [head] - Custom headers to include. **Headers 
    * are NOT ENCRYPTED**. Only information that is necessary for routing should be 
    * included here. 
-   * @returns {SignedRiseMessage}
+   * @returns {module:rise~SignedRiseMessage}
    */ 
   message(toPublicKey, body = {}, head = {}) {
     const clearMsg = new RiseMessage(this.solution, body, head);
@@ -217,8 +217,8 @@ class RiseIdentity {
    * Decrypts the blob given the password and creates a new instance.
    * @param {string} password - User supplied passphrase for decryption.
    * @param {buffer} data - Binary blob of encrypted identity.
-   * @param {buffer} [salt=RiseIdentity.SALT] - Salt for pbkdf2.
-   * @returns {RiseIdentity}
+   * @param {buffer} [salt=module:rise~RiseIdentity~SALT] - Salt for pbkdf2.
+   * @returns {modulex:rise~RiseIdentity}
    */ 
   static unlock(password, data, salt = RiseIdentity.SALT) {
     const key = crypto.pbkdf2Sync(password, salt, 100000, 32, 'sha512');
@@ -238,15 +238,15 @@ class RiseIdentity {
   }
 
   /**
-   * "Mines" a new {@link RiseIdentity} and *iteratively* generates 
-   * {@link RiseSolution}s until one is found that satisfies the stated 
+   * "Mines" a new {@link module:rise~RiseIdentity} and *iteratively* generates 
+   * {@link module:rise~RiseSolution}s until one is found that satisfies the stated 
    * difficulty.
-   * @param {number} [zeroes=RiseIdentity.Z] - Difficulty level expressed in 
+   * @param {number} [zeroes=module:rise~RiseIdentity~Z] - Difficulty level expressed in 
    * number of leading zero bits.
-   * @param {number} [n=RiseIdentity.N] - Width in bits.
-   * @param {number} [k=RiseIdentity.K] - Solution length.
-   * @param {buffer} [epoch=RiseIdentity.MAGIC] - Network magic number.
-   * @returns {RiseIdentity}
+   * @param {number} [n=module:rise~RiseIdentity~N] - Width in bits.
+   * @param {number} [k=module:rise~RiseIdentity~K] - Solution length.
+   * @param {buffer} [epoch=module:rise~RiseIdentity~MAGIC] - Network magic number.
+   * @returns {module:rise~RiseIdentity}
    */
   static generate(zeroes = RiseIdentity.Z, n, k, epoch) {
     return new Promise(async (resolve, reject) => {
@@ -323,25 +323,25 @@ class RiseMessage {
 
   /**
    * Protocol headers included in every rise message.
-   * @typedef {object} RiseMessage~Head
+   * @typedef {object} module:rise~RiseMessage~Head
    * @prop {string} nonce - One-time token to prevent replay attacks.
    * @prop {string} version - Version of the rise package. Analagous to user agent.
    * @prop {boolean} ciphertext - Indicates if the message body should be treated 
    * as ciphertext (it is encrypted).
-   * @prop {RiseSolution} solution - Sender authentication data.
+   * @prop {module:rise~RiseSolution} solution - Sender authentication data.
    */
 
   /**
    * Interface allowing for authenticated message exchange.
    * @constructor
-   * @param {RiseSolution} solution - Identity solution data.
+   * @param {module:rise~RiseSolution} solution - Identity solution data.
    * @param {Object.&lt;string, string>} [body] - Key-value data to include.
    * @param {Object.&lt;string, string>} [head] - Additional headers.
    */
   constructor(solution, body = {}, headers = {}) {
     /** 
      * Default message headers, plus any custom ones supplied.
-     * @member {RiseMessage~Head}
+     * @member {module:rise~RiseMessage~Head}
      */
     this.head = {
       nonce: Date.now() + '~' + crypto.randomBytes(8).toString('base64'),
@@ -362,7 +362,7 @@ class RiseMessage {
   /**
    * Encrypts the message state for the public key provided.
    * @param {Uint8Array|buffer} publicKey - Recipient public key.
-   * @returns {EncryptedRiseMessage}
+   * @returns {module:rise~EncryptedRiseMessage}
    */
   encrypt(publicKey) {
     const body = this.head.ciphertext
@@ -376,7 +376,7 @@ class RiseMessage {
   /**
    * Signs the message state using the private key provided.
    * @param {Uint8Array|buffer} privateKey - Identity to use for signature.
-   * @returns {SignedRiseMessage}
+   * @returns {module:rise~SignedRiseMessage}
    */
   sign(privateKey) {
     const secret = new RiseSecret(privateKey);
@@ -392,7 +392,7 @@ class RiseMessage {
 
   /**
    * Returns only the body of this message.
-   * @returns {Object.&lt;string, string|RiseMessage|EncryptedRiseMessage|SignedRiseMessage|string>}
+   * @returns {Object.&lt;string, string|module:rise~RiseMessage|module:rise~EncryptedRiseMessage|module:rise~SignedRiseMessage|string>}
    */
   unwrap() {
     return this.body;
@@ -424,7 +424,7 @@ class RiseMessage {
   /**
    * Creates a new message instance from the serialized message.
    * @param {buffer} message - Binary blob to deserialize.
-   * @returns {RiseMessage|EncryptedRiseMessage|SignedRiseMessage}
+   * @returns {module:rise~RiseMessage|module:rise~EncryptedRiseMessage|module:rise~SignedRiseMessage}
    */
   static fromBuffer(buffer) {
     const str = buffer.toString();
@@ -456,7 +456,7 @@ class EncryptedRiseMessage extends RiseMessage {
   /**
    * Interface for an encrypted message.
    * @constructor
-   * @extends {RiseMessage}
+   * @extends {module:rise~RiseMessage}
    */
   constructor() {
     super(...arguments);
@@ -466,7 +466,7 @@ class EncryptedRiseMessage extends RiseMessage {
   /**
    * Decrypts the message using the supplied private key.
    * @param {Uint8Array|buffer} privateKey - Private key to use.
-   * @returns {RiseMessage}
+   * @returns {module:rise~RiseMessage}
    */
   decrypt(privateKey) {
     const secret = new RiseSecret(privateKey);
@@ -506,7 +506,7 @@ class SignedRiseMessage extends EncryptedRiseMessage {
   /**
    * Interface for digitall signed rise message
    * @constructor
-   * @extends {EncryptedRiseMessage}
+   * @extends {module:rise~EncryptedRiseMessage}
    */ 
   constructor() {
     super(...arguments);
@@ -606,7 +606,7 @@ class RiseSolution {
   /**
    * Constructs a {@link RiseSolution} from a JSON object.
    * @param {Object.&lt;string, string>} json - Serialized solution.
-   * @returns {RiseSolution}
+   * @returns {module:rise~RiseSolution}
    */
   static fromJSON(json) {
     return new RiseSolution(Buffer.from(json.proof, 'base64'), parseInt(json.nonce),
