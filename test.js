@@ -15,7 +15,9 @@ describe('@module rise', function() {
   describe('@class RiseIdentity', function() {
 
     it('returns the correct constants', function() {
-      expect(rise.Identity.N).to.equal(126);
+      expect(rise.Identity.Z).to.equal(6);
+      expect(rise.Identity.TEST_Z).to.equal(0);
+      expect(rise.Identity.N).to.equal(102);
       expect(rise.Identity.TEST_N).to.equal(90);
       expect(rise.Identity.K).to.equal(5);
       expect(rise.Identity.TEST_K).to.equal(5);
@@ -24,21 +26,21 @@ describe('@module rise', function() {
     });
 
     it('generates identities from equihash solutions', async function() {
-      i1 = await rise.Identity.generate(90, 5);
-      i2 = await rise.Identity.generate(90, 5);
-      i3 = await rise.Identity.generate(90, 5);
-      i4 = await rise.Identity.generate(90, 5);
-      i5 = await rise.Identity.generate(90, 5);
+      i1 = await rise.Identity.generate(rise.Identity.TEST_Z, rise.Identity.TEST_N, rise.Identity.TEST_K);
+      i2 = await rise.Identity.generate(rise.Identity.TEST_Z, rise.Identity.TEST_N, rise.Identity.TEST_K);
+      i3 = await rise.Identity.generate(rise.Identity.TEST_Z, rise.Identity.TEST_N, rise.Identity.TEST_K);
+      i4 = await rise.Identity.generate(rise.Identity.TEST_Z, rise.Identity.TEST_N, rise.Identity.TEST_K);
+      i5 = await rise.Identity.generate(rise.Identity.TEST_Z, rise.Identity.TEST_N, rise.Identity.TEST_K);
       expect(i1).to.be.instanceOf(rise.Identity);
       expect(i2).to.be.instanceOf(rise.Identity);
       expect(i3).to.be.instanceOf(rise.Identity);
       expect(i4).to.be.instanceOf(rise.Identity);
       expect(i5).to.be.instanceOf(rise.Identity);
-      expect(await i1.solution.verify(90, 5)).to.equal(true);
-      expect(await i2.solution.verify(90, 5)).to.equal(true);
-      expect(await i3.solution.verify(90, 5)).to.equal(true);
-      expect(await i4.solution.verify(90, 5)).to.equal(true);
-      expect(await i5.solution.verify(90, 5)).to.equal(true);
+      expect(await i1.solution.verify(rise.Identity.TEST_N, rise.Identity.TEST_K)).to.equal(true);
+      expect(await i2.solution.verify(rise.Identity.TEST_N, rise.Identity.TEST_K)).to.equal(true);
+      expect(await i3.solution.verify(rise.Identity.TEST_N, rise.Identity.TEST_K)).to.equal(true);
+      expect(await i4.solution.verify(rise.Identity.TEST_N, rise.Identity.TEST_K)).to.equal(true);
+      expect(await i5.solution.verify(rise.Identity.TEST_N, rise.Identity.TEST_K)).to.equal(true);
     });
 
     it('serializes to json', function() {
@@ -73,7 +75,7 @@ describe('@module rise', function() {
     });
 
     it('validates a solution in message header', async function() {
-      expect(await m1.validate(90, 5)).to.equal(true);
+      expect(await m1.validate(rise.Identity.TEST_N, rise.Identity.TEST_K)).to.equal(true);
     });
 
     it('verifies a message', function() {

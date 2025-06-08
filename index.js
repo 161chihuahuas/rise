@@ -5,11 +5,9 @@
 'use strict';
 
 const crypto = require('node:crypto');
-
 const bip39 = require('bip39');
 const ecies = require('eciesjs');
 const { secp256k1: secp } = require('@noble/curves/secp256k1');
-
 const equihash = require('@tacticalchihuahua/equihash');
 
 
@@ -28,8 +26,16 @@ function rmd160(input) {
 
 class RiseIdentity {
 
+  static get Z() {
+    return 6;
+  }
+
+  static get TEST_Z() {
+    return 0;
+  }
+
   static get N() {
-    return 126;
+    return 102;
   }
 
   static get TEST_N() {
@@ -126,12 +132,15 @@ class RiseIdentity {
     );
   }
 
-  static generate(n, k, epoch) {
-    return new Promise((resolve, reject) => {
-      const id = new RiseIdentity();
+  static async generate(zeroes = RiseIdentity.Z, n, k, epoch) {
+    let id, sol;
 
-      id.solve(n, k, epoch).then(() => resolve(id), reject);
-    });
+    do {
+      id = new RiseIdentity();
+      sol = await id.solve(n, k, epoch);
+    } while (sol.difficulty < zeroes)
+
+    return id;
   }
 
 }
@@ -317,6 +326,18 @@ class RiseSolution {
     return rmd160(sha256(Buffer.from(JSON.stringify(this.toJSON()))));
   }
 
+  get difficulty() {
+    const binStr = this.getProofAsBinaryString();
+    
+    for (let i = 0; i < binStr.length; i++) {
+      if (binStr[i] !== '0') {
+        return i;
+      }
+    }
+
+    return binStr.length;
+  }
+
   toJSON() {
     return {
       proof: this.proof.toString('base64'),
@@ -334,6 +355,35 @@ class RiseSolution {
   verify(n = RiseIdentity.N, k = RiseIdentity.K) {
     return equihash.verify(sha256(Buffer.concat([this.epoch, this.pubkey])),
       this.proof, this.nonce, n, k);
+  }
+
+  getProofAsBinaryString() {
+    const mapping = {
+      '0': '0000',
+      '1': '0001',
+      '2': '0010',
+      '3': '0011',
+      '4': '0100',
+      '5': '0101',
+      '6': '0110',
+      '7': '0111',
+      '8': '1000',
+      '9': '1001',
+      'a': '1010',
+      'b': '1011',
+      'c': '1100',
+      'd': '1101',
+      'e': '1110',
+      'f': '1111'
+    };
+    const hexaString = this.proof.toString('hex').toLowerCase();
+    const bitmaps = [];
+
+    for (let i = 0; i < hexaString.length; i++) {
+      bitmaps.push(mapping[hexaString[i]]);
+    }
+
+    return bitmaps.join('');
   }
 
 }
