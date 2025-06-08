@@ -107,18 +107,31 @@ class RiseIdentity {
   constructor(entropy, solution, salt = RiseIdentity.SALT) {
     entropy = entropy || secp.utils.randomPrivateKey();
 
-    /** @property {Uint8Array|buffer} salt - Used for local pbkdf2. */ 
+    /** 
+     * Used for local PBKDF2.
+     * @member {Uint8Array|buffer}
+     */ 
     this.salt = salt; 
-    /** @property {string} mnemonic - BIP39 recovery words. */ 
+    /** 
+     * BIP39 recovery words. 
+     * @member {string}
+     */ 
     this.mnemonic = bip39.entropyToMnemonic(entropy);
-    /** @property {RiseSecret} secret - Underlying secret key. */ 
+    /** 
+     * Underlying secret key.
+     * @member {RiseSecret} 
+     */ 
     this.secret = new RiseSecret(entropy);
-    /** @property {RiseSolution} solution - Underlying equihash solution. */ 
+    /** 
+     * Underlying equihash solution.
+     * @member {RiseSolution}
+     */ 
     this.solution = solution || new RiseSolution();
   }
 
   /**
-   * @property {buffer} fingerprint - 160 bit solution hash.
+   * 160 bit solution hash.
+   * @member {buffer}
    */ 
   get fingerprint() {
     return this.solution.fingerprint;
@@ -246,23 +259,44 @@ class RiseIdentity {
 
 }
 
+
 class RiseSecret {
 
+  /**
+   * Interface for secp256k1 key pair. If no secret is provided, one will be 
+   * generated.
+   * @constructor
+   * @param {Uint8Array|buffer} [secret] - Private key to use.
+   */
   constructor(secret) {
+    /** @member {Uint8Array} privateKey - Underlying private key. */ 
     this.privateKey = secret
-      ? new Uint8Array(secret)
+      ? Uint8Array.from(secret)
       : secp.utils.randomPrivateKey();
   }
 
+  /** 
+   * Public key derived from private key.
+   * @member {Uint8Array}
+   */
   get publicKey() {
     return secp.getPublicKey(this.privateKey);
   }
 
-
+  /**
+   * Decrypts the given data using the underlying private key.
+   * @param {Uint8Array|buffer} message - Encrypted blob.
+   * @returns {Uint8Array}
+   */
   decrypt(message) {
     return ecies.decrypt(this.privateKey, message);    
   }
 
+  /**
+   * Creates a digital signature from the provided data.
+   * @param {Uint8Array|buffer} message - Binary blob to sign.
+   * @returns {string} hexSignature
+   */
   sign(message) {
     const buf = message;
     const msg = sha256(buf);
@@ -273,9 +307,31 @@ class RiseSecret {
 
 }
 
+
 class RiseMessage {
 
+  /**
+   * Protocol headers included in every rise message.
+   * @typedef {object} RiseMessage~Head
+   * @prop {string} nonce - One-time token to prevent replay attacks.
+   * @prop {string} version - Version of the rise package. Analagous to user agent.
+   * @prop {boolean} ciphertext - Indicates if the message body should be treated 
+   * as ciphertext (it is encrypted).
+   * @prop {RiseSolution} solution - Sender authentication data.
+   */
+
+  /**
+   * Interface allowing for authenticated message exchange.
+   * @constructor
+   * @param {RiseSolution} solution - Identity solution data.
+   * @param {Object.<string, string>} [body] - Key-value data to include.
+   * @param {Object.<string, string>} [head] - Additional headers.
+   */
   constructor(solution, body = {}, headers = {}) {
+    /** 
+     * Default message headers, plus any custom ones supplied.
+     * @member {RiseMessage~Head}
+     */
     this.head = {
       nonce: Date.now() + '~' + crypto.randomBytes(8).toString('base64'),
       version: require('./package.json').version,
@@ -283,11 +339,20 @@ class RiseMessage {
       solution,
       ...headers
     };
+    /** 
+     * Key-value pairs given for the message.
+     * @member {Object.<string, string>|string} 
+     */
     this.body = Buffer.isBuffer(body)
       ? body.toString('base64')
       : body;
   }
 
+  /**
+   * Encrypts the message state for the public key provided.
+   * @param {Uint8Array|buffer} publicKey - Recipient public key.
+   * @returns {EncryptedRiseMessage}
+   */
   encrypt(publicKey) {
     const body = this.head.ciphertext
       ? this.body
@@ -297,6 +362,11 @@ class RiseMessage {
       ecies.encrypt(publicKey, body), this.head);
   }  
 
+  /**
+   * Signs the message state using the private key provided.
+   * @param {Uint8Array|buffer} privateKey - Identity to use for signature.
+   * @returns {SignedRiseMessage}
+   */
   sign(privateKey) {
     const secret = new RiseSecret(privateKey);
     const buf = this.toBuffer(); 
@@ -309,14 +379,26 @@ class RiseMessage {
     return msg;
   }
 
+  /**
+   * Returns only the body of this message.
+   * @returns {Object.<string, string|RiseMessage|EncryptedRiseMessage|SignedRiseMessage|string>}
+   */
   unwrap() {
     return this.body;
   }
 
+  /**
+   * Ensures the solution header is valid.
+   * @returns {boolean}
+   */
   validate() {
     return this.head.solution.verify(...arguments);
   }
 
+  /**
+   * Serializes the message to wire format.
+   * @returns {buffer}
+   */
   toBuffer() {
     const magicStr = RiseIdentity.MAGIC.toString('hex'); 
     const head = JSON.stringify(this.head);
@@ -328,6 +410,11 @@ class RiseMessage {
     return Buffer.from(str);
   }
 
+  /**
+   * Creates a new message instance from the serialized message.
+   * @param {buffer} message - Binary blob to deserialize.
+   * @returns {RiseMessage|EncryptedRiseMessage|SignedRiseMessage}
+   */
   static fromBuffer(buffer) {
     const str = buffer.toString();
     const magicStr = RiseIdentity.MAGIC.toString('hex'); 
@@ -352,13 +439,24 @@ class RiseMessage {
 
 }
 
+
 class EncryptedRiseMessage extends RiseMessage {
 
+  /**
+   * Interface for an encrypted message.
+   * @constructor
+   * @extends {RiseMessage}
+   */
   constructor() {
     super(...arguments);
     this.head.ciphertext = true;
   }
 
+  /**
+   * Decrypts the message using the supplied private key.
+   * @param {Uint8Array|buffer} privateKey - Private key to use.
+   * @returns {RiseMessage}
+   */
   decrypt(privateKey) {
     const secret = new RiseSecret(privateKey);
     let body = JSON.parse(
@@ -391,12 +489,22 @@ class EncryptedRiseMessage extends RiseMessage {
 
 }
 
+
 class SignedRiseMessage extends EncryptedRiseMessage {
 
+  /**
+   * Interface for digitall signed rise message
+   * @constructor
+   * @extends {EncryptedRiseMessage}
+   */ 
   constructor() {
     super(...arguments);
   }
 
+  /**
+   * Ensures that the digita signature is valid.
+   * @returns {boolean}
+   */
   verify() {
     const sig = this.head.signature;
 
@@ -414,19 +522,51 @@ class SignedRiseMessage extends EncryptedRiseMessage {
 
 }
 
+
 class RiseSolution {
 
+  /**
+   * Interface for identity solutions.
+   * @param {buffer} proof - Equihash proof value.
+   * @param {number} nonce - Solution nonce.
+   * @param {buffer} pubkey - Public key solution was seeded from.
+   * @param {buffer} epoch - Magic network number prepended to public key.
+   */
   constructor(proof, nonce, pubkey, epoch = RiseIdentity.MAGIC) {
+    /** 
+     * Equihash proof.
+     * @member {buffer} 
+     */
     this.proof = proof;
+    /** 
+     * Solution nonce.
+     * @member {nuber} 
+     */
     this.nonce = nonce;
+    /** 
+     * Network magic number.
+     * @member {buffer}
+     */
     this.epoch = epoch;
+    /** 
+     * Public key.
+     * @member {buffer}
+     */
     this.pubkey = Buffer.from(pubkey);
   }
 
+  /** 
+   * RIPEMD-160 hash for SHA-256 hash of serialized solution.
+   * @member {buffer}
+   */
   get fingerprint() {
     return rmd160(sha256(Buffer.from(JSON.stringify(this.toJSON()))));
   }
 
+  /**
+   * Number of leading zeroes in the proof.
+   * @member {number}
+   */
   get difficulty() {
     const binStr = this.getProofAsBinaryString();
     
@@ -439,6 +579,10 @@ class RiseSolution {
     return binStr.length;
   }
 
+  /**
+   * Serilaizes the solution into a JSON object.
+   * @returns {Object.<string, string>}
+   */ 
   toJSON() {
     return {
       proof: this.proof.toString('base64'),
@@ -448,16 +592,31 @@ class RiseSolution {
     };
   }
 
+  /**
+   * Constructs a {@link RiseSolution} from a JSON object.
+   * @param {Object.<string, string>} json - Serialized solution.
+   * @returns {RiseSolution}
+   */
   static fromJSON(json) {
     return new RiseSolution(Buffer.from(json.proof, 'base64'), parseInt(json.nonce),
       Buffer.from(json.pubkey, 'base64'), Buffer.from(json.epoch, 'base64'));
   }
 
+  /**
+   * Ensures that the solution is valid.
+   * @param {number} [n=RiseIdentity.N] - Width in bits.
+   * @param {number} [k=RiseIdentity.K] - Proof length.
+   * @returns {Promise<boolean>}
+   */
   verify(n = RiseIdentity.N, k = RiseIdentity.K) {
     return equihash.verify(sha256(Buffer.concat([this.epoch, this.pubkey])),
       this.proof, this.nonce, n, k);
   }
 
+  /**
+   * Represents the proof as a string of 1's and 0's.
+   * @returns {string}
+   */ 
   getProofAsBinaryString() {
     const mapping = {
       '0': '0000',
