@@ -126,7 +126,7 @@ class RiseIdentity {
      * Underlying equihash solution.
      * @member {RiseSolution}
      */ 
-    this.solution = solution || new RiseSolution();
+    this.solution = solution || {};
   }
 
   /**
@@ -246,15 +246,21 @@ class RiseIdentity {
    * @param {buffer} [epoch=RiseIdentity.MAGIC] - Network magic number.
    * @returns {RiseIdentity}
    */
-  static async generate(zeroes = RiseIdentity.Z, n, k, epoch) {
-    let id, sol;
+  static generate(zeroes = RiseIdentity.Z, n, k, epoch) {
+    return new Promise(async (resolve, reject) => {
+      let id, sol;
 
-    do {
-      id = new RiseIdentity();
-      sol = await id.solve(n, k, epoch);
-    } while (sol.difficulty < zeroes)
+      do {
+        id = new RiseIdentity();
+        try {
+          sol = await id.solve(n, k, epoch);
+        } catch (e) {
+          return reject(e);
+        }
+      } while (sol.difficulty < zeroes)
 
-    return id;
+      resolve(id);
+    });
   }
 
 }
