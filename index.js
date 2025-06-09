@@ -101,7 +101,7 @@ class RiseIdentity {
    * a new one will be created.
    * @param {RiseSolution} [solution] - Equihash solution corresponding to the 
    * given private key.
-   * @param {Uint8Array|buffer} [salt=RiseSolution~SALT] - Salt used for local 
+   * @param {Uint8Array|buffer} [salt=module:rise~RiseSolution~SALT] - Salt used for local 
    * pbkdf2 operations locking/unlocking this identity.
    */
   constructor(entropy, solution, salt = RiseIdentity.SALT) {
@@ -119,12 +119,12 @@ class RiseIdentity {
     this.mnemonic = bip39.entropyToMnemonic(entropy);
     /** 
      * Underlying secret key.
-     * @member {RiseSecret} 
+     * @member {module:rise~RiseSecret} 
      */ 
     this.secret = new RiseSecret(entropy);
     /** 
      * Underlying equihash solution.
-     * @member {RiseSolution}
+     * @member {module:rise~RiseSolution}
      */ 
     this.solution = solution || {};
   }
