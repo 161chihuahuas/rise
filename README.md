@@ -9,7 +9,7 @@ A protocol and implementation of self-issued network identities capable of:
 * Interoperable with any cryptsystem using secp256k1.
 
 ```sh
-npm install @tacticalchihuahua/rise --save
+npm install @yipyap/rise --save
 ```
 
 ## what
@@ -65,7 +65,7 @@ it here <3.
 
 ```js
 const { writeFile } = require('node:fs/promises');
-const rise = require('@tacticalchihuahua/rise');
+const rise = require('@yipyap/rise');
 const identity = await rise.Identity.generate();
 
 await writeFile('rise.id', identity.lock('password'));
@@ -75,7 +75,7 @@ await writeFile('rise.id', identity.lock('password'));
 
 ```js
 const { readFile } = require('node:fs/promises');
-const rise = require('@tacticalchihuahua/rise');
+const rise = require('@yipyap/rise');
 const crypted = await readFile('rise.id');
 const identity = await rise.Identity.unlock('password', crypted);
 
@@ -86,5 +86,5 @@ Generate the documentation with `npm run generate-docs`.
 
 ## copying
 
-anti-copyright 2025 tactical chihuahua  
+anti-copyright 2025 chihuahua.rodeo  
 licensed under the gnu lesser general public license 2.1 or later

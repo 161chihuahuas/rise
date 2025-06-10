@@ -1,5 +1,5 @@
 {
-  "name": "@tacticalchihuahua/rise",
+  "name": "@yipyap/rise",
   "version": "1.0.0",
   "description": "eclipse-resistant network identities",
   "main": "index.js",
@@ -20,7 +20,7 @@
     "p2p",
     "crypto"
   ],
-  "author": "lily anne <161chihuahuas@disroot.org>",
+  "author": "chihuahua.rodeo <161chihuahuas@disroot.org>",
   "license": "LGPL-2.1",
   "bugs": {
     "url": "https://github.com/161chihuahuas/rise/issues"
@@ -28,7 +28,7 @@
   "homepage": "https://github.com/161chihuahuas/rise#readme",
   "dependencies": {
     "@noble/curves": "^1.9.2",
-    "@tacticalchihuahua/equihash": "^1.0.0",
+    "@yipyap/equihash": "^1.0.0",
     "bip39": "^3.1.0",
     "eciesjs": "^0.4.15"
   },

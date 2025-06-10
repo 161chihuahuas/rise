@@ -1,7 +1,7 @@
 /**
  * Rise is a protocol for decentalized, eclipse-resistant identities. 
  * @module rise
- * @author tactical chihuahua <161chihuahuas@disroot.org>
+ * @author chihuahua.rodeo <161chihuahuas@disroot.org>
  * @license LGPL-2.1
  */
 'use strict';
@@ -10,7 +10,7 @@ const crypto = require('node:crypto');
 const bip39 = require('bip39');
 const ecies = require('eciesjs');
 const { secp256k1: secp } = require('@noble/curves/secp256k1');
-const equihash = require('@tacticalchihuahua/equihash');
+const equihash = require('@yipyap/equihash');
 
 
 function _hash(alg, input) {
