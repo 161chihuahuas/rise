@@ -1,7 +1,7 @@
 /**
  * Rise is a protocol for decentalized, eclipse-resistant identities. 
  * @module rise
- * @author chihuahua.rodeo <161chihuahuas@disroot.org>
+ * @author yipsec <161chihuahuas@disroot.org>
  * @license LGPL-2.1
  */
 'use strict';

@@ -86,5 +86,5 @@ Generate the documentation with `npm run generate-docs`.
 
 ## copying
 
-anti-copyright 2025 chihuahua.rodeo  
+anti-copyright 2025 yipsec  
 licensed under the gnu lesser general public license 2.1 or later
