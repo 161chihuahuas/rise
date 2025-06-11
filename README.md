@@ -9,7 +9,7 @@ A protocol and implementation of self-issued network identities capable of:
 * Interoperable with any cryptsystem using secp256k1.
 
 ```sh
-npm install @yipyap/rise --save
+npm install @yipsec/rise --save
 ```
 
 ## what
@@ -65,7 +65,7 @@ it here <3.
 
 ```js
 const { writeFile } = require('node:fs/promises');
-const rise = require('@yipyap/rise');
+const rise = require('@yipsec/rise');
 const identity = await rise.Identity.generate();
 
 await writeFile('rise.id', identity.lock('password'));
@@ -75,7 +75,7 @@ await writeFile('rise.id', identity.lock('password'));
 
 ```js
 const { readFile } = require('node:fs/promises');
-const rise = require('@yipyap/rise');
+const rise = require('@yipsec/rise');
 const crypted = await readFile('rise.id');
 const identity = await rise.Identity.unlock('password', crypted);
 
